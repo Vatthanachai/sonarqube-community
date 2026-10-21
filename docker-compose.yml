@@ -1,0 +1,69 @@
+services:
+  sonarqube:
+    image: sonarqube:latest
+    container_name: sonarqube-service
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: on-failure
+    ports:
+      - 9000:9000
+    volumes:      
+      - ./sonarqube/extensions:/opt/sonarqube/extensions
+      - ./sonarqube/data:/var/opt/sonarqube/data
+      - ./sonarqube/logs:/opt/sonarqube/logs
+    environment:
+      - SONAR_JDBC_USERNAME=sonarqube
+      - SONAR_JDBC_PASSWORD=P@ssw0rd!
+      - SONAR_JDBC_URL=jdbc:postgresql://db:5432/sonarqube
+      - SONAR_WEB_JAVAADDITIONALOPS=-Xmx2048m
+      - SONAR_CE_JAVAADDITIONALOPS=-Xmx2048m
+    ulimits:
+      nofile:
+        soft: 131072
+        hard: 131072
+      nproc:
+        soft: 8192
+        hard: 8192
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/api/system/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 60s
+    networks:
+      - sonarqube-network
+  db:
+    image: postgres:latest
+    container_name: sonarqube-db
+    restart: on-failure
+    volumes:
+      - ./postgres:/var/lib/postgresql
+    environment:
+      - POSTGRES_USER=sonarqube
+      - POSTGRES_PASSWORD=P@ssw0rd!
+      - POSTGRES_DB=sonarqube
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sonarqube"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - sonarqube-network
+  pgadmin:
+    image: dpage/pgadmin4:9.18
+    container_name: pgadmin-service
+    restart: on-failure
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - 5050:80
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=admin@example.com
+      - PGADMIN_DEFAULT_PASSWORD=admin
+    networks:
+      - sonarqube-network
+networks:
+  sonarqube-network:
+    driver: bridge
