@@ -10,7 +10,7 @@ services:
       - 9000:9000
     volumes:      
       - ./sonarqube/extensions:/opt/sonarqube/extensions
-      - ./sonarqube/data:/var/opt/sonarqube/data
+      - ./sonarqube/data:/opt/sonarqube/data
       - ./sonarqube/logs:/opt/sonarqube/logs
     environment:
       - SONAR_JDBC_USERNAME=sonarqube
@@ -26,11 +26,11 @@ services:
         soft: 8192
         hard: 8192
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9000/api/system/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:9000/api/system/status"]
       interval: 10s
       timeout: 5s
       retries: 10
-      start_period: 60s
+      start_period: 90s
     networks:
       - sonarqube-network
   db:
